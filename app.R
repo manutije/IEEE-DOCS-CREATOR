@@ -19,7 +19,7 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
             textInput(inputId = "ID_Nombre",
-                      label = "Ingresa el nombre del Archivo (sin espacios)",
+                      label = "Ingresa el nombre del Archivo",
             ),
             textInput(inputId = "ID_Titulo",
                       label = "Ingresa el titulo del Documento",
@@ -27,8 +27,28 @@ ui <- fluidPage(
             textInput(inputId = "ID_autor",
                       label = "Ingresa el autor del Documento",
             ),
+            sliderInput(inputId = "ID_Tamaño",label = "Tamaño de letra"
+                        ,min = 10,max = 12,value = 10,step = 1
+            ),
+            selectInput(inputId = "ID_Tipo_Papel",label = "Selecciona el tamaño de papel"
+                        ,choices = c("a4paper","letterpaper"),selected = "a4paper"
+            ),
+            selectInput(inputId = "ID_Clase",label = "Selecciona la clase de documento"
+                        ,choices = c("article","report","book","slide")
+                        ,selected = "article"
+            ),
+            radioButtons(inputId = "ID_Columnas",label = "Se requieren 2 columnas"
+                         ,choices = c("SI","NO"),selected = "NO"
+            ),
+            radioButtons(inputId = "ID_Hoja_Titulo",label = "Se requiere una hoja para el titulo"
+                         ,choices = c("SI","NO"),selected = "NO"
+            ),
+            radioButtons(inputId = "ID_Hoja_Indice",label = "Se requiere una hoja para el indice"
+                         ,choices = c("SI","NO"),selected = "NO"
+            ),
             actionButton(inputId = "ID_boton_1",
-                         label = "CREAR"),
+                         label = "CREAR"
+            ),
         ),
 
         # Show a plot of the generated distribution
@@ -36,6 +56,7 @@ ui <- fluidPage(
             h3("Crear Nueva Seccion"),
             textInput(inputId = "ID_Seccion",
                       label = "Ingresa el nombre de la Seccion",
+                      value = "Recuerda crear primero el documento"
             ),
             textAreaInput(inputId = "Id_Texto_seccion",
                           label = "Ingresa el texto de la seccion nueva",
@@ -59,13 +80,37 @@ server <- function(input, output, session) {
         nombre <- isolate(input$ID_Nombre)
         titulo <- isolate(input$ID_Titulo)
         autor <- isolate(input$ID_autor)
+        tamaño <- isolate(input$ID_Tamaño)
+        papel <- isolate(input$ID_Tipo_Papel)
+        clase <- isolate(input$ID_Clase)
+        columnas <- isolate(input$ID_Columnas)
+        hojas_titulo <- isolate(input$ID_Hoja_Titulo)
+        hojas_indice <- isolate(input$ID_Hoja_Indice)
+        
         nombre_archivo <- sprintf("%s.tex",nombre)
         titulo_completo <- sprintf("\\title{%s}",titulo)
         autor_completo <- sprintf("\\author{%s}",autor)
+        if(columnas =="NO"){
+            if(hojas_titulo =="NO"){
+                clase_completa <- sprintf("\\documentclass[%spt,%s,notitlepage]{%s}",tamaño,papel,clase)
+            }
+            if(hojas_titulo =="SI"){
+                clase_completa <- sprintf("\\documentclass[%spt,%s,titlepage]{%s}",tamaño,papel,clase)
+            }
+        }
+        if(columnas =="SI"){
+            if(hojas_titulo =="NO"){
+                clase_completa <- sprintf("\\documentclass[%spt,%s,twocolumn,notitlepage]{%s}",tamaño,papel,clase)
+            }
+            if(hojas_titulo =="SI"){
+                clase_completa <- sprintf("\\documentclass[%spt,%s,twocolumn,titlepage]{%s}",tamaño,papel,clase)
+            }
+            
+        }
         file.create(nombre_archivo)
         conn <- file(nombre_archivo,open = "a",encoding = "UTF-8")
         sink(conn,append = TRUE)
-        cat("\\documentclass[a4paper,11pt]{article}")
+        cat(clase_completa)
         cat("\n")
         cat("\\usepackage[utf8]{inputenc}")
         cat("\n")
@@ -85,10 +130,15 @@ server <- function(input, output, session) {
         cat("\n")
         cat("\\tableofcontents")
         cat("\n")
+        if(hojas_indice =="SI"){
+            cat("\\newpage")
+            cat("\n")
+        }
         sink()
         close(conn)
         updateTextInput(session,"ID_Titulo",value = "")
         updateTextInput(session,"ID_autor",value = "")
+        updateTextInput(session,"ID_Seccion",value = "")
         
     })
     
