@@ -1,14 +1,4 @@
- #
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
-
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -18,6 +8,7 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+
             textInput(inputId = "ID_Nombre",
                       label = "Ingresa el nombre del Archivo",
             ),
@@ -62,13 +53,36 @@ ui <- fluidPage(
                           label = "Ingresa el texto de la seccion nueva",
                           value = "Primero Crea una nueva Seccion",
                           width = 500,
-                          height = 500),
+                          height = 250),
             actionButton(inputId = "ID_boton_2",
                          label = "AGREGAR SECCION"),
             actionButton(inputId = "ID_boton_4",
                          label = "AGREGAR PARRAFO"),
+            hr(),
+            wellPanel(
+                textInput(inputId = "ID_Imagen",label = "Ingresar el path de la
+                          imagen/tabla para el documento",value = "Primero Crea una nueva Seccion"
+                          ,width = 300
+                ),
+                textInput(inputId = "ID_Caption",label = "Ingresar el caption del grafico"
+                          ,value = "Primero Crea una nueva Seccion"
+                          ,width = 300
+                ),
+                textInput(inputId = "ID_Label",label = "Ingresar el label del grafico"
+                          ,value = "Primero Crea una nueva Seccion"
+                          ,width = 300
+                ),
+                sliderInput(inputId = "ID_Width",label = "Ingresa el ancho de la imagen con 
+                            respecto al ancho de la pagina",min=0.1,max=1,value=0.5,step=.1,
+                            width = 350),
+                actionButton(inputId = "ID_boton_5",
+                             label = "AGREGAR IMAGEN/TABLA"),
+            ),
+            hr(),
             actionButton(inputId = "ID_boton_3",
                          label = "TERMINAR DOCUMENTO"),
+            hr(),
+            h6("Desarollado por: Manuel Tijerina López. contacto:manu.tijerina@gmail.com")
         )
     )
 )
@@ -116,6 +130,8 @@ server <- function(input, output, session) {
         cat("\n")
         cat("\\usepackage{latexsym}")
         cat("\n")
+        cat("\\usepackage{graphicx}")
+        cat("\n")
         cat("\\usepackage[activeacute,spanish]{babel}")
         cat("\n")
         cat(autor_completo)
@@ -155,6 +171,7 @@ server <- function(input, output, session) {
         close(conn)
         updateTextInput(session,"ID_Seccion",value = " Ahora escribe abajo el parrafo")
         updateTextAreaInput(session,"Id_Texto_seccion",value = "")
+        updateTextInput(session,"ID_Imagen",value = "")
     })
     
     observeEvent(input$ID_boton_3,{
@@ -182,6 +199,34 @@ server <- function(input, output, session) {
         close(conn)
         updateTextInput(session,"ID_Seccion",value = "")
         updateTextAreaInput(session,"Id_Texto_seccion",value = "")
+    })
+    observeEvent(input$ID_boton_5,{
+        nombre <- isolate(input$ID_Nombre)
+        imagen <- isolate(input$ID_Imagen)
+        caption <- isolate(input$ID_Caption)
+        label <- isolate(input$ID_Label)
+        widths <- isolate(input$ID_Width)
+        nombre_archivo <- sprintf("%s.tex",nombre)
+        imagen_completa <- sprintf("\t\\includegraphics[width=%.1f\\textwidth]{%s}",widths,imagen)
+        caption_completo <-sprintf("\t\\caption{%s}",caption)
+        label_completo <- sprintf("\t\\label{fig:%s}",label)
+        conn <- file(nombre_archivo,open = "a",encoding = "UTF-8")
+        sink(conn,append = TRUE)
+        cat("\\begin{figure}[htb]")
+        cat("\n")
+        cat("\t\\centering")
+        cat("\n")
+        cat(imagen_completa)
+        cat("\n")
+        cat(caption_completo)
+        cat("\n")
+        cat(label_completo)
+        cat("\n")
+        cat("\\end{figure}\\\\")
+        cat("\n")
+        sink()
+        close(conn)
+        updateTextInput(session,"ID_Seccion",value = "")
     })
 }
 
